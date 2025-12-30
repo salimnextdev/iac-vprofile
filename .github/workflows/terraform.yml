@@ -81,7 +81,7 @@ jobs:
         run: |
           terraform apply -auto-approve -no-color -input=false -parallelism=1 planfile
         
-      - name: "Get Kube Comfig file"
+      - name: "Get Kube Config file"
         id: getconfig
         if: steps.apple.conclusion == 'success'
         run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER }} --region ${{ env.AWS_REGION }}

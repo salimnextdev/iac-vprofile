@@ -1,4 +1,5 @@
 name: "Vprofile IAC"
+
 on:
   push:
     branches:
@@ -13,17 +14,19 @@ on:
       - 'terraform/**'
 
 env:
-  AWS_SECRET_KEY_ID: ${{ secrets.AWS_SECRET_KEY_ID }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   BUCKET_TF_STATE: ${{ secrets.BUCKET_TF_STATE }}
   AWS_REGION: us-east-1
   EKS_CLUSTER: vprofile-eks
-
+  TF_IN_AUTOMATION: true
+  TF_INPUT: false
 
 jobs:
   terraform:
     name: "Terraform Apply"
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     defaults:
       run:
         shell: bash
@@ -34,29 +37,45 @@ jobs:
         uses: actions/checkout@v4
 
       - name: "Setup Terraform"
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.6.3"
+          terraform_wrapper: false
+
+      - name: "Configure AWS Credentials"
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: "Terraform Init"
         id: init
-        run: terraform init -backend-config="bucket=${{ env.BUCKET_TF_STATE }}" 
-     
-      - name: "Terraform fmt"
-        id: fmt
-      
-        run: terraform fmt -check
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ env.BUCKET_TF_STATE }}" \
+            -backend-config="key=terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -input=false
 
-      - name: "Terraform validate"
+      - name: "Terraform Format Check"
+        id: fmt
+        run: terraform fmt -check -recursive
+
+      - name: "Terraform Validate"
         id: validate
         run: terraform validate
 
       - name: "Terraform Plan"
         id: plan
-        run: terraform plan -no-color -input=false -out planfile
+        run: |
+          terraform plan \
+            -no-color \
+            -input=false \
+            -out=planfile \
+            -parallelism=10
         continue-on-error: true
 
       - name: "Terraform Plan Status"
         if: steps.plan.outcome == 'failure'
         run: exit 1
-  ###

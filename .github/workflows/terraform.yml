@@ -79,7 +79,7 @@ jobs:
         id: apple
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
-          terraform apply -auto-approve -no-color -input=false parallelism=1 planfile
+          terraform apply -auto-approve -no-color -input=false -parallelism=1 planfile
         
       - name: "Get Kube Comfig file"
         id: getconfig

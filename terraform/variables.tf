@@ -9,4 +9,8 @@ variable "clusterName" {
   type        = string
   default     = "vprofile-eks"
 }
+<<<<<<< HEAD
 #########
+=======
+####
+>>>>>>> a0e4fe3f5100ea87b6ac702eac58335cb96f65b8

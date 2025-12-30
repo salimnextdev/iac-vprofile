@@ -74,8 +74,3 @@ jobs:
             -input=false \
             -out=planfile \
             -parallelism=10
-        continue-on-error: true
-
-      - name: "Terraform Plan Status"
-        if: steps.plan.outcome == 'failure'
-        run: exit 1
